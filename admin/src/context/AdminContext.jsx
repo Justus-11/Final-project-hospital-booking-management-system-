@@ -9,42 +9,39 @@ const AdminContextProvider = ({ children }) => {
   const [doctors, setDoctors] = useState([]);
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
-  const getAllDoctors = async () => {
-    if (!aToken) {
-      return toast.error("You must be logged in as admin!");
-    }
+ const getAllDoctors = async (token = aToken) => {
+  if (!token) return;
 
-    try {
-      // ✅ Correct: token goes in headers, not in POST body
-      const { data } = await axios.post(
-        `${backendUrl}/api/admin/all-doctors`,
-        {}, // POST body can be empty
-        {
-          headers: {
-            Authorization: `Bearer ${aToken}`, // Must include 'Bearer '
-          },
-        }
-      );
+  try {
+    const { data } = await axios.post(
+      `${backendUrl}/api/admin/all-doctors`,
+      {}, // empty body for POST
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
 
-      if (data.success) {
-        setDoctors(data.doctors);
-        console.log("Doctors:", data.doctors);
+    if (data.success) {
+      setDoctors(data.doctors);
+      console.log("Doctors fetched:", data.doctors); // ✅ log in console
+    } else {
+      if (data.message === "Token Invalid or Expired") {
+        setAToken("");
+        localStorage.removeItem("aToken");
+        toast.error("Session expired. Please log in again.");
       } else {
         toast.error(data.message || "Failed to fetch doctors");
       }
-    } catch (error) {
-      console.error(error);
-      toast.error(error.response?.data?.message || "Something went wrong");
     }
-  };
+  } catch (error) {
+    console.error(error);
+    toast.error(error.response?.data?.message || "Something went wrong");
+  }
+};
 
-  const value = {
-    aToken,
-    setAToken,
-    backendUrl,
-    doctors,
-    getAllDoctors,
-  };
+
+
+  const value = { aToken, setAToken, doctors, getAllDoctors };
 
   return <AdminContext.Provider value={value}>{children}</AdminContext.Provider>;
 };

@@ -1,63 +1,41 @@
-import React, { useState, useContext } from "react";
+import { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import { AdminContext } from "../context/adminContext.jsx";
 
 const Login = () => {
-  const [state, setState] = useState("Admin");
+  const navigate = useNavigate();
+  const { setAToken, backendUrl } = useContext(AdminContext);
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState(null);
 
-  const { setAToken, backendUrl } = useContext(AdminContext);
-  const navigate = useNavigate();
-
-  const onSubmitHandler = async (event) => {
-    event.preventDefault();
+  const onSubmitHandler = async (e) => {
+    e.preventDefault();
     setMessage(null);
 
     try {
-      const response = await fetch(`${backendUrl}/api/admin/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
+      const { data } = await axios.post(`${backendUrl}/api/admin/login`, { email, password });
 
-      const data = await response.json();
+    if (data.success) {
+  localStorage.setItem("aToken", data.token);
+  setAToken(data.token);
+  getAllDoctors(data.token); // Fetch doctors immediately
+  setMessage({ type: "success", text: "Login successful!" });
+  setTimeout(() => navigate("/admin/dashboard"), 1000);
+}
 
-      if (data.success) {
-        setAToken(data.token);
-        localStorage.setItem("aToken", data.token);
-
-        setMessage({ type: "success", text: "Login successful!" });
-
-        // Wait briefly, then redirect
-        setTimeout(() => {
-          navigate("/admin/dashboard");
-        }, 1000);
-      } else {
-        setMessage({
-          type: "error",
-          text: data.message || "Invalid credentials, please try again.",
-        });
-      }
     } catch (error) {
       console.error(error);
-      setMessage({
-        type: "error",
-        text: "Something went wrong. Please try again later.",
-      });
+      setMessage({ type: "error", text: error.response?.data?.message || "Something went wrong" });
     }
   };
 
   return (
-    <form
-      onSubmit={onSubmitHandler}
-      className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 via-white to-blue-50"
-    >
-      <div className="bg-white shadow-2xl rounded-2xl px-8 py-10 w-[90%] max-w-md border border-gray-100">
-        <p className="text-2xl font-semibold text-center text-gray-800 mb-6">
-          <span className="text-blue-600">{state}</span> Login
-        </p>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 via-white to-blue-50">
+      <form onSubmit={onSubmitHandler} className="bg-white shadow-2xl rounded-2xl px-8 py-10 w-[90%] max-w-md border border-gray-100">
+        <h1 className="text-2xl font-semibold text-center text-gray-800 mb-6">Admin Login</h1>
 
         {message && (
           <div
@@ -71,27 +49,23 @@ const Login = () => {
           </div>
         )}
 
-        <div className="mb-4">
-          <p className="text-gray-700 mb-1 font-medium">Email</p>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-400 outline-none"
-          />
-        </div>
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+          placeholder="Email"
+          className="w-full border border-gray-300 rounded-lg px-4 py-2 mb-4 focus:ring-2 focus:ring-blue-400 outline-none"
+        />
 
-        <div className="mb-6">
-          <p className="text-gray-700 mb-1 font-medium">Password</p>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-400 outline-none"
-          />
-        </div>
+        <input
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+          placeholder="Password"
+          className="w-full border border-gray-300 rounded-lg px-4 py-2 mb-6 focus:ring-2 focus:ring-blue-400 outline-none"
+        />
 
         <button
           type="submit"
@@ -99,36 +73,9 @@ const Login = () => {
         >
           Login
         </button>
-
-        <p className="text-center text-gray-600 mt-4">
-          {state === "Admin" ? (
-            <>
-              Doctor Login{" "}
-              <span
-                onClick={() => setState("Doctor")}
-                className="text-blue-600 hover:underline cursor-pointer font-medium"
-              >
-                Click here
-              </span>
-            </>
-          ) : (
-            <>
-              Admin Login{" "}
-              <span
-                onClick={() => setState("Admin")}
-                className="text-blue-600 hover:underline cursor-pointer font-medium"
-              >
-                Click here
-              </span>
-            </>
-          )}
-        </p>
-      </div>
-    </form>
+      </form>
+    </div>
   );
 };
 
 export default Login;
-
-
-

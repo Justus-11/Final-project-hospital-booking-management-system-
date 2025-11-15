@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, { useEffect, useContext } from 'react';
 import { ToastContainer } from 'react-toastify';
 import { AdminContext } from './context/adminContext';
 import Navbar from './components/Navbar';
@@ -13,7 +13,14 @@ import DoctorsList from './pages/Admin/DoctorsList';
 import Login from './pages/Login';
 
 const App = () => {
-  const { aToken } = useContext(AdminContext);
+  const { aToken, getAllDoctors } = useContext(AdminContext);
+
+  // Fetch doctors after login automatically
+  useEffect(() => {
+    if (aToken) {
+      getAllDoctors();
+    }
+  }, [aToken]);
 
   if (!aToken) {
     return (
@@ -32,13 +39,12 @@ const App = () => {
         <Sidebar />
         <div className="flex-1 p-6">
           <Routes>
-            {/* Default admin route */}
             <Route path="/admin" element={<Navigate to="/admin/dashboard" />} />
-
             <Route path="/admin/dashboard" element={<Dashboard />} />
             <Route path="/admin/appointments" element={<AllAppointments />} />
             <Route path="/admin/add-doctor" element={<AddDoctor />} />
             <Route path="/admin/doctors-list" element={<DoctorsList />} />
+            <Route path="*" element={<Navigate to="/admin/dashboard" />} />
           </Routes>
         </div>
       </div>
