@@ -5,7 +5,9 @@ import { toast } from "react-toastify";
 export const AppContext = createContext({});
 
 const AppContextProvider = ({ children }) => {
-  const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:4000";
+  // Use environment variable for production, fallback to localhost for dev
+  const backendUrl =
+    import.meta.env.VITE_BACKEND_URL || "http://localhost:4000";
 
   const [patient, setPatient] = useState(() => {
     const saved = localStorage.getItem("patient");
@@ -17,7 +19,7 @@ const AppContextProvider = ({ children }) => {
   const [loading, setLoading] = useState(false);
   const currencySymbol = "₹";
 
-  // Register patient
+  // ================== PATIENT AUTH ==================
   const registerPatient = async (data) => {
     try {
       const res = await axios.post(`${backendUrl}/api/user/register`, data);
@@ -29,7 +31,6 @@ const AppContextProvider = ({ children }) => {
     }
   };
 
-  // Login patient
   const loginPatient = async (data) => {
     try {
       const res = await axios.post(`${backendUrl}/api/user/login`, data);
@@ -45,7 +46,6 @@ const AppContextProvider = ({ children }) => {
     }
   };
 
-  // Logout
   const logoutPatient = () => {
     setPatient(null);
     setToken(null);
@@ -54,7 +54,7 @@ const AppContextProvider = ({ children }) => {
     toast.success("Logged out successfully!");
   };
 
-  // Fetch doctors
+  // ================== DOCTORS ==================
   const getDoctorsData = async () => {
     setLoading(true);
     try {
@@ -68,7 +68,7 @@ const AppContextProvider = ({ children }) => {
     }
   };
 
-  // Book appointment
+  // ================== APPOINTMENTS ==================
   const bookAppointment = async ({ docId, slotDate, slotTime }) => {
     if (!token || !patient) {
       toast.warning("You must be logged in to book an appointment.");
@@ -88,9 +88,7 @@ const AppContextProvider = ({ children }) => {
     }
   };
 
-  // ================== PAYPAL FUNCTIONS ==================
-
-  // Create PayPal order
+  // ================== PAYPAL ==================
   const createPaypalOrder = async (appointmentId) => {
     if (!token) return { success: false, message: "Not logged in" };
     try {
@@ -99,14 +97,13 @@ const AppContextProvider = ({ children }) => {
         { appointmentId },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      return res.data; // Returns { success: true, orderID }
+      return res.data;
     } catch (err) {
       console.error("Create PayPal Order Error:", err.response?.data || err.message);
       return { success: false, message: err.response?.data?.message || "Failed to create PayPal order" };
     }
   };
 
-  // Capture PayPal order
   const capturePaypalOrder = async (appointmentId, orderID) => {
     if (!token) return { success: false, message: "Not logged in" };
     try {
@@ -115,13 +112,14 @@ const AppContextProvider = ({ children }) => {
         { appointmentId, orderID },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      return res.data; // Returns payment result
+      return res.data;
     } catch (err) {
       console.error("Capture PayPal Order Error:", err.response?.data || err.message);
       return { success: false, message: err.response?.data?.message || "Payment capture failed" };
     }
   };
 
+  // ================== EFFECTS ==================
   useEffect(() => {
     getDoctorsData();
   }, []);
